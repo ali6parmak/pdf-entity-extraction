@@ -1,0 +1,3 @@
+setuptools==75.1.0
+git+https://github.com/huridocs/pdf-document-layout-analysis.git@3e905de378a2b5398fe6934713197b92add3d983
+spacy==3.8.2
