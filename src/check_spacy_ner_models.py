@@ -39,26 +39,36 @@ def find_entities(file_name: str):
         word_boxes_in_segment: list[WordBox] = WordBox.find_word_boxes_in_rectangle(
             segment_bounding_box, word_boxes_for_page
         )
-        doc = nlp(' '.join(segment_box["text"].split()))
+        doc = nlp(" ".join(segment_box["text"].split()))
         total_entity_count += len([ent for ent in doc.ents if ent.label_ in {"DATE", "GPE", "LAW", "ORG", "PERSON"}])
         for entity in doc.ents:
             if entity.label_ not in {"DATE", "GPE", "LAW", "ORG", "PERSON"}:
                 continue
-            word_boxes_for_entity: list[WordBox] = WordBox.find_word_boxes_from_text(word_boxes_in_segment, entity.start_char, entity.end_char)
+            word_boxes_for_entity: list[WordBox] = WordBox.find_word_boxes_from_text(
+                word_boxes_in_segment, entity.start_char, entity.end_char
+            )
             if not word_boxes_for_entity:
-                print("NO WORD BOXES FOUND FOR ENTITY: ", entity.text, entity.label_, segment_box["page_number"], entity.start_char, entity.end_char)
+                print(
+                    "NO WORD BOXES FOUND FOR ENTITY: ",
+                    entity.text,
+                    entity.label_,
+                    segment_box["page_number"],
+                    entity.start_char,
+                    entity.end_char,
+                )
                 print("SEGMENT WORDS:", len(segment_box["text"].split()))
                 print(segment_box["text"])
                 print("WORD BOXES:", len(word_boxes_in_segment))
                 print("\n")
                 continue
+            entity_boxes.append(EntityBox.from_word_boxes(word_boxes_for_entity, entity.label_))
 
     print("COUNTS")
     print("TOTAL ENTITY COUNT: ", total_entity_count)
     print("ENTITY BOX COUNT: ", len(entity_boxes))
 
-
-    save_output_to_pdf(Path(PDFS_PATH, f"{file_name}.pdf"), segment_boxes, entity_boxes)
+    output_file_name = file_name.replace(".pdf", "") + "_spacy_en_core_web_sm.pdf"
+    save_output_to_pdf(Path(PDFS_PATH, f"{file_name}.pdf"), segment_boxes, output_file_name, entity_boxes)
 
 
 def print_all_entities():
