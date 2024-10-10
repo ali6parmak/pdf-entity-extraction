@@ -1,2 +1,7 @@
 .idea/
 data/
+__pycache__
+*.pyc
+*.egg-info
+*.log
+*~
