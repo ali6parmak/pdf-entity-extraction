@@ -26,7 +26,10 @@ class NERTransformerModel:
             if "-" in entity_label:
                 dash_index = entity_label.index("-")
                 entity_label = entity_label[dash_index + 1 :]
-            text = entity_dict["word"].replace("▁", " ").strip()
+            text = entity_dict["word"].replace("▁", " ").replace("#", "").strip()
+            # Because some entities might only include the characters above
+            if not text:
+                continue
 
             if current_entity is None:
                 current_entity = {
@@ -90,7 +93,7 @@ class NERTransformerModel:
         word_boxes_in_segment: list[WordBox] = WordBox.find_word_boxes_in_rectangle(
             segment_bounding_box, word_boxes_for_page
         )
-        result = self.classifier(" ".join(segment_box["text"].split()))
+        result = self.classifier(" ".join([wb.text for wb in word_boxes_in_segment]))
         aggregated_entities = NERTransformerModel.aggregate_entities(result)
         total_entity_count += len(aggregated_entities)
         return self.create_entity_boxes(aggregated_entities, segment_box, word_boxes_in_segment)
@@ -98,7 +101,7 @@ class NERTransformerModel:
     def create_entity_boxes(self, aggregated_entities, segment_box, word_boxes_in_segment):
         entity_boxes: list[EntityBox] = []
         for entity in aggregated_entities:
-            word_boxes_for_entity = WordBox.find_word_boxes_from_text(
+            word_boxes_for_entity = WordBox.find_word_boxes_from_indices(
                 word_boxes_in_segment, entity["start_index"], entity["end_index"]
             )
             if not word_boxes_for_entity and self.show_logs:
@@ -110,6 +113,8 @@ class NERTransformerModel:
                     entity["start_index"],
                     entity["end_index"],
                 )
+                continue
+            if not word_boxes_for_entity:
                 continue
             entity_boxes.append(EntityBox.from_word_boxes(word_boxes_for_entity, entity["entity_label"], entity["text"]))
 
