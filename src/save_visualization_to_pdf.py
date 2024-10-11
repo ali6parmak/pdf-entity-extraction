@@ -103,14 +103,18 @@ def add_entity_annotations(annotator: PdfAnnotator, entity_boxes: list[EntityBox
             )
 
 
-def save_output(annotator: PdfAnnotator, pdf_path: Path):
+def save_output(annotator: PdfAnnotator, pdf_path: Path, output_file_name: str):
     output_pdf_dir = join(ROOT_PATH, "data", "visualizations", pdf_path.name.replace(".pdf", ""))
     makedirs(output_pdf_dir, exist_ok=True)
     output_pdf_path = join(output_pdf_dir, pdf_path.name)
+    if output_file_name:
+        output_pdf_path = join(output_pdf_dir, output_file_name)
     annotator.write(output_pdf_path)
 
 
-def save_output_to_pdf(pdf_path: Path, segment_boxes: list[dict], entity_boxes: list[EntityBox] | None):
+def save_output_to_pdf(
+    pdf_path: Path, segment_boxes: list[dict], output_file_name: str | None, entity_boxes: list[EntityBox] | None
+):
     pdf_outputs_path = join(ROOT_PATH, f"pdf_outputs")
     makedirs(pdf_outputs_path, exist_ok=True)
     annotator = PdfAnnotator(str(pdf_path))
@@ -126,4 +130,4 @@ def save_output_to_pdf(pdf_path: Path, segment_boxes: list[dict], entity_boxes: 
 
     add_entity_annotations(annotator, entity_boxes)
 
-    save_output(annotator, pdf_path)
+    save_output(annotator, pdf_path, output_file_name)
