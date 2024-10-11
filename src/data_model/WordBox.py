@@ -43,16 +43,45 @@ class WordBox:
         return word_boxes_in_rectangle
 
     @staticmethod
-    def find_word_boxes_from_text(word_boxes: list["WordBox"], start_index: int, end_index: int) -> list["WordBox"]:
+    def find_word_boxes_from_indices(word_boxes: list["WordBox"], start_index: int, end_index: int) -> list["WordBox"]:
         current_index = 0
         found_word_boxes: list["WordBox"] = []
+
         for word_box in word_boxes:
-            if current_index < start_index:
-                current_index += len(word_box.text) + 1
+            word_start = current_index
+            word_end = current_index + len(word_box.text)
+
+            if word_end <= start_index:
+                current_index = word_end + 1  # +1 for space before next word
                 continue
-            found_word_boxes.append(word_box)
-            current_index += len(word_box.text) + 1
-            if current_index >= end_index:
+
+            if word_start >= end_index:
                 break
+
+            if start_index <= word_end and word_start < end_index:
+                size_by_letter = word_box.bounding_box.width / len(word_box.text)
+
+                selection_start = max(0, start_index - word_start)
+                selection_end = min(len(word_box.text), end_index - word_start)
+
+                new_text = word_box.text[selection_start:selection_end]
+                new_left = word_box.bounding_box.left + size_by_letter * selection_start
+                new_width = size_by_letter * len(new_text)
+
+                new_bounding_box = Rectangle.from_width_height(
+                    left=new_left,
+                    top=word_box.bounding_box.top,
+                    width=new_width,
+                    height=word_box.bounding_box.height
+                )
+
+                new_word_box = WordBox(new_text, new_bounding_box, word_box.page_number, word_box.page_width,
+                                       word_box.page_height)
+                found_word_boxes.append(new_word_box)
+
+                if word_end >= end_index:
+                    break
+
+            current_index = word_end + 1
 
         return found_word_boxes
