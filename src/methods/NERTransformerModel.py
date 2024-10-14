@@ -9,12 +9,17 @@ from configuration import CACHED_DATA_PATH, PDFS_PATH
 
 
 class NERTransformerModel:
-    def __init__(self, model_name: str, show_logs: bool = False):
+    def __init__(self, model_name: str, show_logs: bool = False, initialize_auto_model: bool = True):
         self.model_name = model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_name)
-        self.classifier = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
         self.show_logs = show_logs
+        self.classifier = None
+        if initialize_auto_model:
+            self.initialize_auto_model()
+
+    def initialize_auto_model(self):
+        tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        model = AutoModelForTokenClassification.from_pretrained(self.model_name)
+        self.classifier = pipeline("ner", model=model, tokenizer=tokenizer)
 
     @staticmethod
     def aggregate_entities(ner_results: list[dict]):
@@ -95,6 +100,10 @@ class NERTransformerModel:
         )
         result = self.classifier(" ".join([wb.text for wb in word_boxes_in_segment]))
         aggregated_entities = NERTransformerModel.aggregate_entities(result)
+
+        if segment_box["page_number"] == 1:
+            print("\n".join([str(r) for r in aggregated_entities]))
+
         total_entity_count += len(aggregated_entities)
         return self.create_entity_boxes(aggregated_entities, segment_box, word_boxes_in_segment)
 
