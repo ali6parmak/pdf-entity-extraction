@@ -4,6 +4,9 @@ from data_model.EntityBox import EntityBox
 from data_model.WordBox import WordBox
 from methods.NERTransformerModel import NERTransformerModel
 
+def print_with_line_breaks(text, line_length=150):
+    for i in range(0, len(text), line_length):
+        print(text[i:i+line_length])
 
 class GLiNERModel(NERTransformerModel):
     def __init__(self, model_name: str, show_logs: bool = False):
@@ -21,9 +24,40 @@ class GLiNERModel(NERTransformerModel):
             segment_bounding_box, word_boxes_for_page
         )
 
-        labels = ["person", "organization", "date", "location"]
+        labels = ["date"]
+        entities = []
+        full_text = " ".join([wb.text for wb in word_boxes_in_segment])
+        previous_chunk_index_end = 0
+        chunk_text = ""
+        for word_box in word_boxes_in_segment:
+            if len(chunk_text) + len(word_box.text) < 375:
+                chunk_text += word_box.text + " "
+                continue
+            chunk_text += word_box.text
 
-        entities = self.classifier.predict_entities(" ".join([wb.text for wb in word_boxes_in_segment]), labels)
+            chunk_entities = self.classifier.predict_entities(chunk_text, labels)
+
+            for entity in chunk_entities:
+                entity["start"] += previous_chunk_index_end
+                entity["end"] += previous_chunk_index_end
+
+            previous_chunk_index_end += len(chunk_text) + 1
+
+            entities.extend(chunk_entities)
+            chunk_text = ""
+
+        if chunk_text:
+            chunk_entities = self.classifier.predict_entities(chunk_text, labels)
+
+            for entity in chunk_entities:
+                entity["start"] += previous_chunk_index_end
+                entity["end"] += previous_chunk_index_end
+
+            previous_chunk_index_end += len(chunk_text) + 1
+
+            entities.extend(chunk_entities)
+
+
         aggregated_entities = [
             {
                 "text": entity["text"],
@@ -34,8 +68,11 @@ class GLiNERModel(NERTransformerModel):
             for entity in entities
         ]
 
-        if segment_box["page_number"] == 1:
-            print("\n".join([str(r) for r in aggregated_entities]))
+        print("PAGE: ", segment_box["page_number"])
+        print_with_line_breaks(" ".join([wb.text for wb in word_boxes_in_segment]))
+        print("-" * 30)
+        print("\n".join([str(r) for r in aggregated_entities]))
+        print("*" * 30)
 
         total_entity_count += len(aggregated_entities)
         return self.create_entity_boxes(aggregated_entities, segment_box, word_boxes_in_segment)
