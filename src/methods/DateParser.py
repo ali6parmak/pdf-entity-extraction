@@ -8,7 +8,8 @@ from methods.NERTransformerModel import NERTransformerModel
 
 def print_with_line_breaks(text, line_length=150):
     for i in range(0, len(text), line_length):
-        print(text[i:i+line_length])
+        print(text[i : i + line_length])
+
 
 class DateParser(NERTransformerModel):
     def __init__(self, model_name: str = "date_parser", show_logs: bool = False):
@@ -26,14 +27,7 @@ class DateParser(NERTransformerModel):
             start_index = main_text.find(date_text, end_index)
             end_index = start_index + len(date_text)
 
-            entities.append(
-                {
-                    "text": date_text,
-                    "entity_label": "DATE",
-                    "start_index": start_index,
-                    "end_index": end_index
-                }
-            )
+            entities.append({"text": date_text, "entity_label": "DATE", "start_index": start_index, "end_index": end_index})
         return entities
 
     def process_segment(self, pdf_words, segment_box, total_entity_count) -> list[EntityBox]:
@@ -63,9 +57,9 @@ class DateParser(NERTransformerModel):
         total_entity_count += len(entities)
         return self.create_entity_boxes(entities, segment_box, word_boxes_in_segment)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     start = time()
     date_parser = DateParser("date_parser")
     date_parser.get_entities("cejil_staging41", save_output=True)
     print("date parse finished in", round(time() - start, 2), "seconds")
-
