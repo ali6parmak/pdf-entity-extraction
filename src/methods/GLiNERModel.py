@@ -1,4 +1,5 @@
 import json
+from time import time
 
 from gliner import GLiNER
 from pdf_features.Rectangle import Rectangle
@@ -15,7 +16,7 @@ def print_with_line_breaks(text, line_length=150):
 class GLiNERModel(NERTransformerModel):
     def __init__(self, model_name: str, show_logs: bool = False):
         super().__init__(model_name, show_logs, initialize_auto_model=False)
-        self.model_name = model_name
+        self.model_name = model_name + "_law_references"
         self.classifier = GLiNER.from_pretrained(model_name)
         self.show_logs = show_logs
 
@@ -50,7 +51,7 @@ class GLiNERModel(NERTransformerModel):
             segment_bounding_box, word_boxes_for_page
         )
 
-        labels = ["date"]
+        labels = ["law", "cardinal"]
         entities = []
         window_size = 20
         slide_size = 10
@@ -92,3 +93,10 @@ class GLiNERModel(NERTransformerModel):
 
         total_entity_count += len(aggregated_entities)
         return self.create_entity_boxes(aggregated_entities, segment_box, word_boxes_in_segment)
+
+
+if __name__ == "__main__":
+    model = GLiNERModel("urchade/gliner_multi-v2.1")
+    start = time()
+    model.get_entities("cejil_staging33", save_output=True)
+    print("results finished in", round(time() - start, 2), "seconds")

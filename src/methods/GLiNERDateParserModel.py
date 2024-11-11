@@ -1,4 +1,5 @@
 import json
+from time import time
 
 from gliner import GLiNER
 from pdf_features.Rectangle import Rectangle
@@ -16,7 +17,7 @@ def print_with_line_breaks(text, line_length=150):
 class GLiNERDateParserModel(NERTransformerModel):
     def __init__(self, model_name: str, show_logs: bool = False):
         super().__init__(model_name, show_logs, initialize_auto_model=False)
-        self.model_name = model_name + "_date_parser"
+        self.model_name = model_name + "_date_parser_temp"
         self.classifier = GLiNER.from_pretrained(model_name)
         self.show_logs = show_logs
 
@@ -127,16 +128,23 @@ class GLiNERDateParserModel(NERTransformerModel):
         aggregated_entities = self.get_parseable_entities(aggregated_entities)
         aggregated_entities = self.remove_overlapping_entities(aggregated_entities)
 
-        full_text = " ".join([wb.text for wb in word_boxes_in_segment])
-        cleaned_text = self.remove_found_dates_from_text(full_text, aggregated_entities)
-        date_parser_entities = self.get_date_parser_predictions(cleaned_text)
-        aggregated_entities.extend(date_parser_entities)
+        # full_text = " ".join([wb.text for wb in word_boxes_in_segment])
+        # cleaned_text = self.remove_found_dates_from_text(full_text, aggregated_entities)
+        # date_parser_entities = self.get_date_parser_predictions(cleaned_text)
+        # aggregated_entities.extend(date_parser_entities)
 
-        print("PAGE: ", segment_box["page_number"])
-        print_with_line_breaks(" ".join([wb.text for wb in word_boxes_in_segment]))
-        print("-" * 30)
-        print("\n".join([str(r) for r in aggregated_entities]))
-        print("*" * 30)
+        # print("PAGE: ", segment_box["page_number"])
+        # print_with_line_breaks(" ".join([wb.text for wb in word_boxes_in_segment]))
+        # print("-" * 30)
+        # print("\n".join([str(r) for r in aggregated_entities]))
+        # print("*" * 30)
 
         total_entity_count += len(aggregated_entities)
         return self.create_entity_boxes(aggregated_entities, segment_box, word_boxes_in_segment)
+
+
+if __name__ == "__main__":
+    model = GLiNERDateParserModel("urchade/gliner_multi-v2.1")
+    start = time()
+    model.get_entities("cejil_staging41", save_output=True)
+    print("results finished in", round(time() - start, 2), "seconds")
