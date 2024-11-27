@@ -1,8 +1,8 @@
 from Levenshtein import ratio
 from flair.data import Sentence
 from ollama_entity_extraction.OllamaNERExtractor import OllamaNERExtractor
+from ollama_entity_extraction.data_model.EntitiesDict import EntitiesDict
 from ollama_entity_extraction.data_model.EntityInfo import EntityInfo
-from ollama_entity_extraction.ollama_temp import EntitiesDict
 
 
 class OllamaNameExtractor(OllamaNERExtractor):
@@ -103,6 +103,7 @@ class OllamaNameExtractor(OllamaNERExtractor):
 
     def find_unique_names(self, entities_dict: EntitiesDict) -> tuple[list[str], EntitiesDict]:
 
+        entities_dict.sort_entities()
         unique_names = []
         indexes_to_skip = []
         names_list: list[str] = list(entities_dict.keys())
