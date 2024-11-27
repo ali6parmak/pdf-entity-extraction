@@ -53,3 +53,6 @@ class EntitiesDict:
 
     def pop(self, entity_text: str):
         return self.entities.pop(entity_text, None)
+
+    def sort_entities(self):
+        self.entities = dict(sorted(self.entities.items()))
