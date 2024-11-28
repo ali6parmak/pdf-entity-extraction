@@ -6,3 +6,4 @@ __pycache__
 *.log
 *~
 /cejil_data/
+/cejil_labeled_data/
