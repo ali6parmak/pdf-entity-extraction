@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from Levenshtein import ratio
 from ollama import Client
 from spacy.language import Language
 from flair.nn import Classifier
@@ -8,6 +9,7 @@ from flair.nn import Classifier
 from ollama_entity_extraction.data_model.ConsoleTextColor import ConsoleTextColor
 from ollama_entity_extraction.data_model.ConsoleTextStyle import ConsoleTextStyle
 from ollama_entity_extraction.data_model.EntitiesDict import EntitiesDict
+from ollama_entity_extraction.data_model.EntityInfo import EntityInfo
 
 OLLAMA_HOST = "http://localhost:11434"
 
@@ -23,10 +25,6 @@ class OllamaNERExtractor:
         self.ollama_model_name = ollama_model_name
 
     @staticmethod
-    def get_prompt(entity_texts: list[str]) -> str:
-        raise NotImplementedError("This method should be implemented in the subclass.")
-
-    @staticmethod
     def save_entity_texts(save_path: str | Path, entity_texts: list[str]):
         output_path = Path(save_path)
         entity_texts.sort()
@@ -38,13 +36,19 @@ class OllamaNERExtractor:
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(entities_dict.to_dict(), f, ensure_ascii=False, indent=4)
 
-    def get_ollama_extraction(self, content: str, options=None):
-        response = self.ollama_client.chat(
-            model=self.ollama_model_name, options=options, messages=[{"role": "user", "content": content}]
-        )
-        response_content = response["message"]["content"]
-        extracted_entities_list = response_content.split("\n")
-        return extracted_entities_list
+    @staticmethod
+    def get_prompt(entity_texts: list[str]) -> str:
+        raise NotImplementedError("This method should be implemented in the subclass.")
+
+    @staticmethod
+    def get_word_intersection_ratio(word1: str, word2: str) -> float:
+        words1 = set(word1.lower().split())
+        words2 = set(word2.lower().split())
+        max_len = max(len(words1), len(words2))
+        if max_len == 0:
+            return 0.0
+        intersection = len(words1 & words2)
+        return intersection / max_len
 
     @staticmethod
     def _format_mention(
@@ -106,10 +110,77 @@ class OllamaNERExtractor:
 
         return result
 
+    def get_ollama_extraction(self, content: str, options=None) -> list[str]:
+        response = self.ollama_client.chat(
+            model=self.ollama_model_name, options=options, messages=[{"role": "user", "content": content}]
+        )
+        response_content = response["message"]["content"]
+        extracted_entities_list = response_content.split("\n")
+        return extracted_entities_list
+
+    def are_entities_similar(self, entity_group: list[str], entity_to_check: str) -> bool:
+        for entity in entity_group:
+            if ratio(entity, entity_to_check) > 0.79 or self.get_word_intersection_ratio(entity, entity_to_check) > 0.65:
+                return True
+        return False
+
+    def process_entity_group(self, entity_group: list[str], entities_dict: EntitiesDict):
+        if len(entity_group) < 2:
+            return
+        print(f"Processing group: \033[94m{entity_group}\033[0m")
+        content = self.get_prompt(entity_group)
+        ollama_extracted_entities = self.get_ollama_extraction(content, options={"temperature": 0})
+        normalized_entities = list(set([
+            # sub_entity.strip() for entity in ollama_extracted_entities for sub_entity in entity.split(",") if entity
+            entity.strip() for entity in ollama_extracted_entities
+        ]))
+        print(f"Result: \033[92m{normalized_entities}\033[0m")
+
+        if not len(normalized_entities) == 1:
+            return
+
+        representative_entity = normalized_entities[0]
+        if representative_entity not in entities_dict.keys():
+            entities_dict.entities[representative_entity] = EntityInfo()
+
+        for entity in entity_group:
+            if entity != representative_entity:
+                entities_dict.merge_entities(representative_entity, entity)
+
+    def get_similar_entities_of_given_entity(
+        self, entities_list: list[str], indexes_to_skip: list[int], entity_to_check: str, current_index: int
+    ) -> list[str]:
+        similar_entities: list[str] = [entity_to_check]
+        for i in range(len(entities_list)):
+            if i == current_index or i in indexes_to_skip:
+                continue
+            if self.are_entities_similar(similar_entities, entities_list[i]):
+                similar_entities.append(entities_list[i])
+                indexes_to_skip.append(i)
+        return similar_entities
+
+    def find_unique_entities(self, entities_dict: EntitiesDict) -> EntitiesDict:
+
+        entities_dict.sort_entities()
+        indexes_to_skip = []
+        entities_list: list[str] = list(entities_dict.keys())
+
+        for i, current_entity in enumerate(entities_list):
+            if i in indexes_to_skip:
+                continue
+
+            entity_group = self.get_similar_entities_of_given_entity(entities_list, indexes_to_skip, current_entity, i)
+
+            if entity_group:
+                self.process_entity_group(entity_group, entities_dict)
+                indexes_to_skip.append(i)
+
+        return entities_dict
+
     def extract_entities_from_text(self, text: str) -> list[dict[str, str | int]]:
         pass
 
-    def extract_entities(self, pdf_name: str, segment_boxes: list[dict], entities_dict: EntitiesDict = None):
+    def extract_entities(self, pdf_name: str, segment_boxes: list[dict], entities_dict: EntitiesDict = None) -> EntitiesDict:
         if entities_dict is None:
             entities_dict = EntitiesDict()
         current_page = 1
