@@ -77,7 +77,8 @@ class OllamaNERExtractor:
         mention_content = ConsoleTextColor.PINK(" ... " + mention[mention_print_start_index:mention_start_index])
 
         entity_text_styles = [ConsoleTextStyle.BOLD, ConsoleTextStyle.UNDERLINE]
-        entity_text_formatted = ConsoleTextStyle.apply(entity_text, entity_text_styles)
+        raw_entity_text = mention[mention_start_index: mention_end_index]
+        entity_text_formatted = ConsoleTextStyle.apply(raw_entity_text, entity_text_styles)
 
         mention_end_text = ConsoleTextColor.PINK(mention[mention_end_index:mention_print_end_index] + "...")
 
