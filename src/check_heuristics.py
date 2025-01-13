@@ -14,18 +14,30 @@ def get_names() -> (list[str], list[str]):
     return raw_names, name_labels
 
 
-def clean_accents(name_instances: list[str], show_normalizations: bool = False) -> defaultdict[Any, set]:
-    normalized_names = defaultdict(set)
-    for name in name_instances:
-        normalized_name = unidecode(name)
-        normalized_names[normalized_name].add(name)
-    if show_normalizations:
-        for normalized_name, merged_names in normalized_names.items():
-            if len(merged_names) == 1:
-                continue
-            print(f"{ConsoleTextColor.BLUE(normalized_name)}: {ConsoleTextColor.YELLOW(str(merged_names))}")
-    return normalized_names
+def clean_accents(name_instances: list[str], show_normalizations: bool = False) -> list[list[str]]:
+    grouped_names: list[list[str]] = []
 
+    for name in name_instances:
+        if name == unidecode(name):
+            continue
+
+        found_group = False
+        for group in grouped_names:
+            if any(unidecode(name) == unidecode(existing_name) for existing_name in group):
+                if name not in group:
+                    group.append(name)
+                found_group = True
+                break
+        if not found_group:
+            grouped_names.append([name])
+
+    if show_normalizations:
+        for group in grouped_names:
+            if len(group) > 1:
+                normalized = unidecode(group[0])
+                print(f"{normalized}: {group}")
+
+    return grouped_names
 
 
 def sort_names_by_words(name_instances: list[str], show_normalizations: bool = True) -> defaultdict[Any, set]:
@@ -260,7 +272,7 @@ def apply_heuristic():
 
 
     # fix_abbreviations(raw_names)
-    raw_names = clean_accents_list(raw_names, True)
+    raw_names = clean_accents(raw_names, True)
     # clear_punctuations(raw_names)
     # fix_abbreviations(["A. Ali", "Ali Ali", "Gabo G"])
 
