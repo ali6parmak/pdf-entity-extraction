@@ -9,7 +9,9 @@ from ollama_entity_extraction.data_model.ConsoleTextColor import ConsoleTextColo
 
 
 def get_names() -> (list[str], list[str]):
-    raw_names: list[str] = Path(ROOT_PATH, f"cejil_labeled_data/ner_text_files/person_names_llama3.1.txt").read_text().split("\n")
+    raw_names: list[str] = (
+        Path(ROOT_PATH, f"cejil_labeled_data/ner_text_files/person_names_llama3.1.txt").read_text().split("\n")
+    )
     name_labels: list[str] = Path(ROOT_PATH, f"cejil_labeled_data/labels/name_labels.txt").read_text().split("\n")
     return raw_names, name_labels
 
@@ -43,7 +45,7 @@ def clean_accents(name_instances: list[str], show_normalizations: bool = False) 
 def sort_names_by_words(name_instances: list[str], show_normalizations: bool = True) -> defaultdict[Any, set]:
     normalized_names = defaultdict(set)
     for line in name_instances:
-        name_groups = [name.strip() for name in line.split(',')]
+        name_groups = [name.strip() for name in line.split(",")]
         for name in name_groups:
             normalized_name = unidecode(name)
             words = normalized_name.split()
@@ -58,10 +60,12 @@ def sort_names_by_words(name_instances: list[str], show_normalizations: bool = T
     return normalized_names
 
 
-def use_part_of_the_name(name_instances: list[str], word_count: int = 2, show_normalizations: bool = True) -> defaultdict[Any, set]:
+def use_part_of_the_name(
+    name_instances: list[str], word_count: int = 2, show_normalizations: bool = True
+) -> defaultdict[Any, set]:
     normalized_names = defaultdict(set)
     for line in name_instances:
-        name_groups = [name.strip() for name in line.split(',')]
+        name_groups = [name.strip() for name in line.split(",")]
         for name in name_groups:
             normalized_name = unidecode(name)
             words = normalized_name.split()
@@ -71,12 +75,11 @@ def use_part_of_the_name(name_instances: list[str], word_count: int = 2, show_no
 
     normalized_names_sorted = sorted(list(normalized_names.keys()), key=lambda x: -len(x.split()))
 
-
     for i, longer_name in enumerate(normalized_names_sorted):
         longer_words = set(longer_name.split())
         if len(longer_words) < word_count:
             continue
-        for shorter_name in normalized_names_sorted[i + 1:]:
+        for shorter_name in normalized_names_sorted[i + 1 :]:
             shorter_words = set(shorter_name.split())
             if len(shorter_words) < 2:
                 break
@@ -85,7 +88,6 @@ def use_part_of_the_name(name_instances: list[str], word_count: int = 2, show_no
                 normalized_names[shorter_name].clear()
 
     normalized_names = defaultdict(set, {k: v for k, v in normalized_names.items() if v})
-
 
     if show_normalizations:
         for normalized_name, merged_names in normalized_names.items():
@@ -102,7 +104,6 @@ def check_mistakes(normalized_names: defaultdict[Any, set], name_labels: list[st
     for name_group_string in name_labels:
         name_group = [n.strip() for n in name_group_string.split(",")]
         name_label_groups.append(name_group)
-
 
     found_name_group_indexes = []
     correct_merges = 0
@@ -123,10 +124,8 @@ def check_mistakes(normalized_names: defaultdict[Any, set], name_labels: list[st
                 correct_merges += 1
                 break
 
-
             # if name_found:
             #     break
-
 
         if not name_found:
             print(f"{normalized_name}: {merged_names}")
@@ -174,14 +173,15 @@ def check_mistakes_short_names(normalized_names: defaultdict[Any, set], name_lab
 
 
 def is_abbreviated_name(name: str) -> bool:
-    return any(len(word.replace('.', '')) == 1 for word in name.split())
+    return any(len(word.replace(".", "")) == 1 for word in name.split())
+
 
 def get_name_words_set(raw_name: str) -> set[str]:
-    return set([word for word in raw_name.split() if len(word.replace('.', '')) > 1])
+    return set([word for word in raw_name.split() if len(word.replace(".", "")) > 1])
 
 
 def get_name_abbreviations(raw_name: str) -> set[str]:
-    return set([word for word in raw_name.split() if len(word.replace('.', '')) == 1])
+    return set([word for word in raw_name.split() if len(word.replace(".", "")) == 1])
 
 
 def is_word_starts_with(word: str, starts_with: str) -> bool:
@@ -205,13 +205,16 @@ def fix_abbreviations(raw_names: list[str]):
         raw_name_abbreviations = get_name_abbreviations(raw_name)
 
         abbreviated_groups.append([raw_name])
-        for candidate_name in sorted_names[i + 1:]:
+        for candidate_name in sorted_names[i + 1 :]:
             candidate_name_words = get_name_words_set(candidate_name)
             candidate_names_extra_words = candidate_name_words.difference(raw_name_words)
 
-
-            if not all([is_word_starts_with(word, starts_with.replace('.', '')) for word, starts_with in
-                       zip(candidate_names_extra_words, raw_name_abbreviations)]):
+            if not all(
+                [
+                    is_word_starts_with(word, starts_with.replace(".", ""))
+                    for word, starts_with in zip(candidate_names_extra_words, raw_name_abbreviations)
+                ]
+            ):
                 continue
             if raw_name_words.intersection(candidate_name_words) == raw_name_words:
                 abbreviated_groups[-1].append(candidate_name)
@@ -222,22 +225,22 @@ def fix_abbreviations(raw_names: list[str]):
 
     return raw_names
 
+
 def clear_punctuations(raw_names: list[str]):
     cleaned_groups = []
     for i, raw_name in enumerate(raw_names):
-        clean_raw_name = ''.join([letter for letter in raw_name if letter not in string.punctuation])
+        clean_raw_name = "".join([letter for letter in raw_name if letter not in string.punctuation])
         if raw_name == clean_raw_name:
             continue
         cleaned_groups.append([raw_name])
         clean_raw_name_words = clean_raw_name.split()
         if not clean_raw_name_words:
             continue
-        for candidate_name in raw_names[i + 1:]:
-            clean_candidate_name = ''.join([letter for letter in candidate_name if letter not in string.punctuation])
+        for candidate_name in raw_names[i + 1 :]:
+            clean_candidate_name = "".join([letter for letter in candidate_name if letter not in string.punctuation])
             clean_candidate_name_words = clean_candidate_name.split()
             if clean_raw_name_words == clean_candidate_name_words:
                 cleaned_groups[-1].append(candidate_name)
-
 
     for group in cleaned_groups:
         print(f"{group}")
@@ -246,18 +249,14 @@ def clear_punctuations(raw_names: list[str]):
     return cleaned_groups
 
 
-
-
-
 def apply_heuristic():
     _, name_labels = get_names()
     raw_names = []
 
     for line in name_labels:
-        name_groups = [name.strip() for name in line.split(',')]
+        name_groups = [name.strip() for name in line.split(",")]
         for name in name_groups:
             raw_names.append(name)
-
 
     # clean_names = clean_accents(raw_names, True)
     # clean_names = sort_names_by_words(name_labels, True)
@@ -270,14 +269,11 @@ def apply_heuristic():
     # fixed_names = fix_abbreviations(normalized_names)
     # print(fixed_names)
 
-
     # fix_abbreviations(raw_names)
     raw_names = clean_accents(raw_names, True)
     # clear_punctuations(raw_names)
     # fix_abbreviations(["A. Ali", "Ali Ali", "Gabo G"])
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     apply_heuristic()

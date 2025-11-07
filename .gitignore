@@ -7,3 +7,13 @@ __pycache__
 *~
 /cejil_data/
 /cejil_labeled_data/
+opennyai_model/
+legal_ner_model/
+en_legal_ner_sm-any-py3-none-any/
+.vscode/
+dist/
+notes
+notes.md
+report_big_llm.md
+response.json
+results.md

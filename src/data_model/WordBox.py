@@ -22,7 +22,7 @@ class WordBox:
         top = int(float(element.attrib["yMin"]))
         right = int(float(element.attrib["xMax"]))
         bottom = int(float(element.attrib["yMax"]))
-        bounding_box: Rectangle = Rectangle(left, top, right, bottom)
+        bounding_box: Rectangle = Rectangle.from_coordinates(left, top, right, bottom)
         text = element.text
         return WordBox(text, bounding_box, page_number, page_width, page_height)
 
@@ -69,14 +69,12 @@ class WordBox:
                 new_width = size_by_letter * len(new_text)
 
                 new_bounding_box = Rectangle.from_width_height(
-                    left=new_left,
-                    top=word_box.bounding_box.top,
-                    width=new_width,
-                    height=word_box.bounding_box.height
+                    left=new_left, top=word_box.bounding_box.top, width=new_width, height=word_box.bounding_box.height
                 )
 
-                new_word_box = WordBox(new_text, new_bounding_box, word_box.page_number, word_box.page_width,
-                                       word_box.page_height)
+                new_word_box = WordBox(
+                    new_text, new_bounding_box, word_box.page_number, word_box.page_width, word_box.page_height
+                )
                 found_word_boxes.append(new_word_box)
 
                 if word_end >= end_index:

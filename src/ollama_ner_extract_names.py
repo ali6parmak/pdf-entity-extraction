@@ -27,29 +27,32 @@ HOST = "http://localhost:11434"
 # gemma2:27b - 30.24 seconds
 # llama3.1 - 16.18 seconds (run on local - gtx 1070)
 
+
 def convert_sets_to_lists(data):
-  if isinstance(data, dict):
-      return {k: convert_sets_to_lists(v) for k, v in data.items()}
-  elif isinstance(data, set):
-      return list(data)
-  elif isinstance(data, list):
-      return [convert_sets_to_lists(element) for element in data]
-  elif isinstance(data, tuple):
-      return tuple(convert_sets_to_lists(element) for element in data)
-  else:
-      return data
+    if isinstance(data, dict):
+        return {k: convert_sets_to_lists(v) for k, v in data.items()}
+    elif isinstance(data, set):
+        return list(data)
+    elif isinstance(data, list):
+        return [convert_sets_to_lists(element) for element in data]
+    elif isinstance(data, tuple):
+        return tuple(convert_sets_to_lists(element) for element in data)
+    else:
+        return data
 
 
 def save_to_json(entities_dict):
     json_compatible_data = convert_sets_to_lists(entities_dict)
     output_path = Path("./projects/pdf-entity-extraction/cejil_data/ner_json_files/person_names.json")
-    with output_path.open('w', encoding='utf-8') as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(json_compatible_data, f, ensure_ascii=False, indent=4)
+
 
 def save_to_pickle(entities_dict):
     output_path = Path("./projects/pdf-entity-extraction/cejil_data/ner_pickle_files/person_names.pickle")
-    with output_path.open('wb') as f:
+    with output_path.open("wb") as f:
         pickle.dump(entities_dict, f)
+
 
 def save_to_text_file():
     json_data = json.loads(Path("./projects/pdf-entity-extraction/cejil_data/ner_json_files/person_names.json").read_text())
@@ -60,6 +63,7 @@ def save_to_text_file():
     names_list.sort()
     output_path = Path("./projects/pdf-entity-extraction/cejil_data/ner_text_files/person_names.txt")
     output_path.write_text("\n".join(names_list))
+
 
 def extract_and_save_entities():
     extractor = OllamaMultipleEntityExtractor()
@@ -87,7 +91,7 @@ class OllamaMultipleEntityExtractor:
             "\n\n"
             "Here are the instructions that you should follow:\n"
             "\n - Identify names that refer to the same person."
-            "\n - Consider variations such as spelling differences, missing middle names, or presence of accents (e.g., \"Ali\" vs. \"Alí\")."
+            '\n - Consider variations such as spelling differences, missing middle names, or presence of accents (e.g., "Ali" vs. "Alí").'
             "\n - For each group of similar names, choose the most complete and accurate version as the representative name."
             # "\n - Prefer names that include full middle names over those that have only initial names or missing middle names."
             "\n - Prefer names that include full middle names over those that have initials or omit them."
@@ -97,7 +101,8 @@ class OllamaMultipleEntityExtractor:
             "\n\n\nHere are the names to process:\n\n"
             "### INPUT\n\n"
             f"{entities_string}\n\n\n"
-            f"### OUTPUT:")
+            f"### OUTPUT:"
+        )
         return content
 
     @staticmethod
@@ -143,7 +148,13 @@ class OllamaMultipleEntityExtractor:
         def create_default_dict():
             # return {"pages": set(), "mentions": set(), "pdf_name": list()}
             # return {"pages": set(), "mentions": set(), "mention_starts": list(), "mention_ends": list()}
-            return {"pages": list(), "mentions": list(), "mention_starts": list(), "mention_ends": list(), "segment_numbers": list()}
+            return {
+                "pages": list(),
+                "mentions": list(),
+                "mention_starts": list(),
+                "mention_ends": list(),
+                "segment_numbers": list(),
+            }
 
         segment_boxes: list[dict] = json.loads((CACHED_DATA_PATH / f"{pdf_name}.json").read_text())
         previous_pages_segment_count: int = 0
@@ -152,7 +163,9 @@ class OllamaMultipleEntityExtractor:
 
         for segment_box in segment_boxes:
             if segment_box["page_number"] != current_page:
-                previous_pages_segment_count += len([segment_box for segment_box in segment_boxes if segment_box["page_number"] == current_page])
+                previous_pages_segment_count += len(
+                    [segment_box for segment_box in segment_boxes if segment_box["page_number"] == current_page]
+                )
                 current_page = segment_box["page_number"]
                 segment_no = 1
             reconstructed_text = " ".join([word for word in segment_box["text"].split()])
@@ -170,23 +183,24 @@ class OllamaMultipleEntityExtractor:
                 # entities_dict[entity_text_title]["mentions"].add(reconstructed_text)
                 entities_dict[entity_text_title]["mentions"].append(reconstructed_text)
                 entities_dict[entity_text_title]["mention_starts"].append(reconstructed_text.index(entity_text))
-                entities_dict[entity_text_title]["mention_ends"].append(reconstructed_text.index(entity_text) + len(entity_text))
+                entities_dict[entity_text_title]["mention_ends"].append(
+                    reconstructed_text.index(entity_text) + len(entity_text)
+                )
                 entities_dict[entity_text_title]["segment_numbers"].append(segment_no)
                 # entities_dict[entity_label][entity_text_title]["pdf_names"].append(pdf_name)
             segment_no += 1
-
 
         return entities_dict
 
     @staticmethod
     def print_formatted_entities(entities_dict):
-        PINK = '\033[95m'
-        GREEN = '\033[92m'
-        YELLOW = '\033[93m'
-        BOLD = '\033[1m'
-        ITALIC = '\033[3m'
-        UNDERLINE = '\033[4m'
-        END = '\033[0m'
+        PINK = "\033[95m"
+        GREEN = "\033[92m"
+        YELLOW = "\033[93m"
+        BOLD = "\033[1m"
+        ITALIC = "\033[3m"
+        UNDERLINE = "\033[4m"
+        END = "\033[0m"
 
         # Example usage
         print(f"{BOLD}This is bold text{END}")
@@ -201,19 +215,31 @@ class OllamaMultipleEntityExtractor:
                 mention_end_index = entities_dict[entity_text]["mention_ends"][mention_index]
                 mention_print_start_index = max(mention_start_index - 50, 0)
                 mention_print_end_index = min(mention_end_index + 50, len(mention))
-                page_mention_text = entities_dict[entity_text]['pages'][mention_index] + " - s:" + str(entities_dict[entity_text]['segment_numbers'][mention_index])
-                mention_text = (f"{PINK}-{END}{ITALIC}[{page_mention_text}]{END} "
-                                f"{PINK} ..." + mention[mention_print_start_index: mention_start_index] + f"{END}"
-                                + f"{BOLD}{UNDERLINE}"+ mention[mention_start_index: mention_end_index] + f"{END}" +
-                                f"{PINK}" + mention[mention_end_index: mention_print_end_index] + f"...{END}")
+                page_mention_text = (
+                    entities_dict[entity_text]["pages"][mention_index]
+                    + " - s:"
+                    + str(entities_dict[entity_text]["segment_numbers"][mention_index])
+                )
+                mention_text = (
+                    f"{PINK}-{END}{ITALIC}[{page_mention_text}]{END} "
+                    f"{PINK} ..."
+                    + mention[mention_print_start_index:mention_start_index]
+                    + f"{END}"
+                    + f"{BOLD}{UNDERLINE}"
+                    + mention[mention_start_index:mention_end_index]
+                    + f"{END}"
+                    + f"{PINK}"
+                    + mention[mention_end_index:mention_print_end_index]
+                    + f"...{END}"
+                )
 
                 print(mention_text)
-
 
 
 def get_names():
     names_path = Path("./projects/pdf-entity-extraction/cejil_data/ner_text_files/person_names.txt")
     return names_path.read_text().split("\n")
+
 
 def get_word_intersect_ratio(word1: str, word2: str):
     words1 = set(word1.lower().split())
@@ -246,11 +272,13 @@ def find_unique_entities(entity_texts: list[str]):
 def get_ollama_extraction(entity_texts: list[str], content: str):
     # content = OllamaMultipleEntityExtractor.get_person_entity_prompt(entity_texts)
     client = Client(host=f"{HOST}")
-    response = client.chat(model=f"{MODEL_NAME}", options={"temperature": 0},
-                           messages=[{"role": "user", "content": content}])
+    response = client.chat(
+        model=f"{MODEL_NAME}", options={"temperature": 0}, messages=[{"role": "user", "content": content}]
+    )
     response_content = response["message"]["content"]
     extracted_entities_list = response_content.split("\n")
     return extracted_entities_list
+
 
 def process_a_name_group(name_group, unique_names):
     non_unique_names_in_group, unique_names_in_group = find_unique_entities(name_group)
@@ -261,6 +289,7 @@ def process_a_name_group(name_group, unique_names):
     content = OllamaMultipleEntityExtractor.get_person_entity_prompt(non_unique_names_in_group)
     ollama_extracted_entities = get_ollama_extraction(non_unique_names_in_group, content)
     unique_names.extend(ollama_extracted_entities)
+
 
 def find_unique_names(names_list: list[str]):
     if not names_list:
@@ -277,7 +306,10 @@ def find_unique_names(names_list: list[str]):
             continue
 
         last_name_in_group = name_group[-1]
-        is_similar = ratio(last_name_in_group, current_name) > 0.79 or get_word_intersect_ratio(current_name, last_name_in_group) > 0.65
+        is_similar = (
+            ratio(last_name_in_group, current_name) > 0.79
+            or get_word_intersect_ratio(current_name, last_name_in_group) > 0.65
+        )
         if is_similar:
             name_group.append(current_name)
             continue
@@ -288,7 +320,9 @@ def find_unique_names(names_list: list[str]):
         process_a_name_group(name_group, unique_names)
 
     # unique_names.sort()
-    output_path = Path(f"./projects/pdf-entity-extraction/cejil_data/ner_text_files/all_unique_person_names_{MODEL_NAME}.txt")
+    output_path = Path(
+        f"./projects/pdf-entity-extraction/cejil_data/ner_text_files/all_unique_person_names_{MODEL_NAME}.txt"
+    )
     output_path.write_text("\n".join(unique_names))
 
 
@@ -307,11 +341,7 @@ def process_a_name_group_with_similarity(name_group, unique_names, json_data):
     content = OllamaMultipleEntityExtractor.get_person_entity_prompt(name_group)
     ollama_extracted_entities = get_ollama_extraction(name_group, content)
     print(f"Result: \033[92m{ollama_extracted_entities}\033[0m")
-    processed_names = [
-        name.strip()
-        for entity in ollama_extracted_entities
-        for name in entity.split(',') if entity
-    ]
+    processed_names = [name.strip() for entity in ollama_extracted_entities for name in entity.split(",") if entity]
 
     unique_names.extend(processed_names)
 
@@ -334,9 +364,9 @@ def process_a_name_group_with_similarity(name_group, unique_names, json_data):
         json_data.pop(name)
 
 
-
-def get_similar_names_of_given_name(names_list: list[str], indexes_to_skip: list[int], name_to_check: str,
-                                    current_index: int):
+def get_similar_names_of_given_name(
+    names_list: list[str], indexes_to_skip: list[int], name_to_check: str, current_index: int
+):
     similar_names = [name_to_check]
     for i in range(len(names_list)):
         if i == current_index or i in indexes_to_skip:
@@ -364,43 +394,39 @@ def find_unique_names_from_similar_groups(names_list: list[str], sub_json_data):
             indexes_to_skip.append(i)
 
     # unique_names.sort()
-    output_path = Path(f"./projects/pdf-entity-extraction/cejil_data/ner_text_files/all_unique_person_names_{MODEL_NAME}.txt")
+    output_path = Path(
+        f"./projects/pdf-entity-extraction/cejil_data/ner_text_files/all_unique_person_names_{MODEL_NAME}.txt"
+    )
     output_path.write_text("\n".join(unique_names))
 
     output_path = Path(f"./projects/pdf-entity-extraction/cejil_data/ner_json_files/sub_person_names_{MODEL_NAME}.json")
-    with output_path.open('w', encoding='utf-8') as f:
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(sub_json_data, f, ensure_ascii=False, indent=4)
 
 
 def rebuild_entities_dict(original_entities_dict, name_to_unique_name_mapping):
-    new_entities_dict = {'PERSON': {}}
+    new_entities_dict = {"PERSON": {}}
 
-    for original_name, data in original_entities_dict['PERSON'].items():
+    for original_name, data in original_entities_dict["PERSON"].items():
         unique_name = name_to_unique_name_mapping.get(original_name, original_name)
-        if unique_name not in new_entities_dict['PERSON']:
-            new_entities_dict['PERSON'][unique_name] = {
-                "pages": set(),
-                "mentions": set(),
-                "pdf_names": []
-            }
+        if unique_name not in new_entities_dict["PERSON"]:
+            new_entities_dict["PERSON"][unique_name] = {"pages": set(), "mentions": set(), "pdf_names": []}
 
-        new_entities_dict['PERSON'][unique_name]["pages"].update(data["pages"])
-        new_entities_dict['PERSON'][unique_name]["mentions"].update(data["mentions"])
-        new_entities_dict['PERSON'][unique_name]["pdf_names"].extend(data["pdf_names"])
+        new_entities_dict["PERSON"][unique_name]["pages"].update(data["pages"])
+        new_entities_dict["PERSON"][unique_name]["mentions"].update(data["mentions"])
+        new_entities_dict["PERSON"][unique_name]["pdf_names"].extend(data["pdf_names"])
 
     # Convert sets to lists
-    for person_data in new_entities_dict['PERSON'].values():
+    for person_data in new_entities_dict["PERSON"].values():
         person_data["pages"] = list(person_data["pages"])
         person_data["mentions"] = list(person_data["mentions"])
 
     return new_entities_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # extract_and_save_entities()
     # save_to_text_file()
-
-
 
     # json_data = json.loads(Path("./projects/pdf-entity-extraction/cejil_data/ner_json_files/person_names.json").read_text())
     # # print(json_data.keys())
@@ -422,8 +448,9 @@ if __name__ == '__main__':
     # find_unique_names_from_similar_groups(names_list, sub_json_data)
     # print("Unique name extraction finished in", round(time() - start, 2), "seconds")
 
-
-    sub_person_names = json.loads(Path(f"./projects/pdf-entity-extraction/cejil_data/ner_json_files/sub_person_names_{MODEL_NAME}.json").read_text())
+    sub_person_names = json.loads(
+        Path(f"./projects/pdf-entity-extraction/cejil_data/ner_json_files/sub_person_names_{MODEL_NAME}.json").read_text()
+    )
     OllamaMultipleEntityExtractor.print_formatted_entities(sub_person_names)
 
 

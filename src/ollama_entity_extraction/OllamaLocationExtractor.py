@@ -35,7 +35,6 @@ class OllamaLocationExtractor(OllamaNERExtractor):
         )
         return content
 
-
     def extract_entities_from_text(self, text: str) -> list[dict[str, str | int]]:
         entity_results = []
 

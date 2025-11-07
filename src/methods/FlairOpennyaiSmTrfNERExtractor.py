@@ -81,7 +81,6 @@ class FlairOpennyaiSmTrfNERExtractor(NERTransformerModel):
                 }
             )
 
-
         sentence = Sentence(" ".join([wb.text for wb in word_boxes_in_segment]))
         self.flair_model.predict(sentence)
         flair_result = sentence.get_spans("ner")

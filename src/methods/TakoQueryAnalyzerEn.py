@@ -1,11 +1,16 @@
-import spacy
 from pathlib import Path
+import spacy
 from pdf_features.Rectangle import Rectangle
 
 from data_model.EntityBox import EntityBox
 from data_model.WordBox import WordBox
 from methods.NERTransformerModel import NERTransformerModel
+
+# Import custom textcat component to register it with spaCy
 from configuration import ROOT_PATH
+
+model_path = Path(ROOT_PATH, "en_tako_query_analyzer")
+import custom_textcat  # noqa: F401
 
 
 def print_with_line_breaks(text, line_length=150):
@@ -13,11 +18,11 @@ def print_with_line_breaks(text, line_length=150):
         print(text[i : i + line_length])
 
 
-class OpennyaiEnLegalNERSm(NERTransformerModel):
-    def __init__(self, model_name: str = "opennyai_en_legal_ner_sm", show_logs: bool = False):
+class TakoQueryAnalyzerEn(NERTransformerModel):
+    def __init__(self, model_name: str = "tako_query_analyzer_en", show_logs: bool = False):
         super().__init__(model_name, show_logs, initialize_auto_model=False)
         self.model_name = model_name
-        self.classifier = spacy.load(Path(ROOT_PATH, "opennyai_model", "en_legal_ner_sm", "en_legal_ner_sm-3.2.0"))
+        self.classifier = spacy.load(Path(ROOT_PATH, "en_tako_query_analyzer"))
         self.show_logs = show_logs
 
     def process_segment(self, pdf_words, segment_box, total_entity_count) -> list[EntityBox]:
@@ -50,5 +55,5 @@ class OpennyaiEnLegalNERSm(NERTransformerModel):
 
 
 if __name__ == "__main__":
-    model = OpennyaiEnLegalNERSm()
+    model = TakoQueryAnalyzerEn()
     model.get_entities("cejil_staging33", save_output=True)

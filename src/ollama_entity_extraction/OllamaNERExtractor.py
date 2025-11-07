@@ -77,7 +77,7 @@ class OllamaNERExtractor:
         mention_content = ConsoleTextColor.PINK(" ... " + mention[mention_print_start_index:mention_start_index])
 
         entity_text_styles = [ConsoleTextStyle.BOLD, ConsoleTextStyle.UNDERLINE]
-        raw_entity_text = mention[mention_start_index: mention_end_index]
+        raw_entity_text = mention[mention_start_index:mention_end_index]
         entity_text_formatted = ConsoleTextStyle.apply(raw_entity_text, entity_text_styles)
 
         mention_end_text = ConsoleTextColor.PINK(mention[mention_end_index:mention_print_end_index] + "...")
@@ -131,10 +131,15 @@ class OllamaNERExtractor:
         print(f"Processing group: \033[94m{entity_group}\033[0m")
         content = self.get_prompt(entity_group)
         ollama_extracted_entities = self.get_ollama_extraction(content, options={"temperature": 0})
-        normalized_entities = list(set([
-            # sub_entity.strip() for entity in ollama_extracted_entities for sub_entity in entity.split(",") if entity
-            entity.strip() for entity in ollama_extracted_entities
-        ]))
+        normalized_entities = list(
+            set(
+                [
+                    # sub_entity.strip() for entity in ollama_extracted_entities for sub_entity in entity.split(",") if entity
+                    entity.strip()
+                    for entity in ollama_extracted_entities
+                ]
+            )
+        )
         print(f"Result: \033[92m{normalized_entities}\033[0m")
 
         if not len(normalized_entities) == 1:

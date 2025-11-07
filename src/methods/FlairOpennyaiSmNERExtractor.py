@@ -1,5 +1,5 @@
 from time import time
-
+from pathlib import Path
 import spacy
 from flair.data import Sentence
 from flair.nn import Classifier
@@ -8,6 +8,7 @@ from pdf_features.Rectangle import Rectangle
 from data_model.EntityBox import EntityBox
 from data_model.WordBox import WordBox
 from methods.NERTransformerModel import NERTransformerModel
+from configuration import ROOT_PATH
 
 
 def print_with_line_breaks(text, line_length=150):
@@ -19,9 +20,7 @@ class FlairOpennyaiReferenceExtractor(NERTransformerModel):
     def __init__(self, model_name: str = "flair_opennyai_extractor", show_logs: bool = False):
         super().__init__(model_name, show_logs, initialize_auto_model=False)
         self.model_name = model_name
-        self.opennyai_model = spacy.load(
-            "/home/ali/projects/pdf-entity-extraction/opennyai_model/en_legal_ner_sm/en_legal_ner_sm-3.2.0"
-        )
+        self.opennyai_model = spacy.load(Path(ROOT_PATH, "opennyai_model", "en_legal_ner_sm", "en_legal_ner_sm-3.2.0"))
         self.flair_model = Classifier.load("ner-ontonotes-large")
         self.show_logs = show_logs
 

@@ -91,9 +91,7 @@ def check_name_entity_performance(ollama_model_name: str):
     print(f"{ConsoleTextColor.END.value}")
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # extract_and_save_all_name_entities("llama3.1")
     # check_name_entity_performance("llama3.1")
     check_name_entity_performance("nemotron-mini:latest")

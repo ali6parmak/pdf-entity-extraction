@@ -62,7 +62,6 @@ class MultipleEntityExtractor:
         date_times = [d[1] for e in entities for d in search_dates(e["text"])]
         return date_times
 
-
     def extract_entities_from_text(self, text: str):
         words = text.split()
         date_times = self.extract_date_entities(words)
@@ -72,7 +71,6 @@ class MultipleEntityExtractor:
 
         for date_string in date_strings:
             entities.append([date_string, "DATE"])
-
 
         opennyai_result = self.opennyai_model(text)
         entity_results = []
@@ -152,7 +150,7 @@ class MultipleEntityExtractor:
                     #     print(f"\033[95m- {mention}\033[0m")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     extractor = MultipleEntityExtractor()
     start = time()
     entities_dict = extractor.extract_entities("cejil_staging33")

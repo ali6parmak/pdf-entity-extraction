@@ -9,6 +9,7 @@ from ollama_entity_extraction.data_model.EntitiesDict import EntitiesDict
 
 CACHED_DATA_PATH = Path(ROOT_PATH, "cejil_labeled_data/cached_data")
 
+
 def extract_and_save_all_name_entities(ollama_model_name: str):
     extractor = OllamaNameExtractor()
     entities_dict: EntitiesDict = EntitiesDict()
@@ -27,8 +28,12 @@ def extract_and_save_all_name_entities(ollama_model_name: str):
 
 def check_name_entity_performance(ollama_model_name):
     name_labels: list[str] = Path(ROOT_PATH, f"cejil_labeled_data/labels/name_labels.txt").read_text().split("\n")[:501]
-    all_extracted_names: list[str] = Path(ROOT_PATH, f"cejil_labeled_data/ner_text_files/person_names_{ollama_model_name}.txt").read_text().split("\n")
-    json_dict = json.loads(Path(ROOT_PATH, f"cejil_labeled_data/ner_json_files/person_names_{ollama_model_name}.json").read_text())
+    all_extracted_names: list[str] = (
+        Path(ROOT_PATH, f"cejil_labeled_data/ner_text_files/person_names_{ollama_model_name}.txt").read_text().split("\n")
+    )
+    json_dict = json.loads(
+        Path(ROOT_PATH, f"cejil_labeled_data/ner_json_files/person_names_{ollama_model_name}.json").read_text()
+    )
 
     end_index = 0
     for index, name in enumerate(all_extracted_names):
@@ -40,7 +45,6 @@ def check_name_entity_performance(ollama_model_name):
 
     print(name_labels[-10:])
     print(all_extracted_names[-10:])
-
 
     filtered_dict = {name: json_dict[name] for name in all_extracted_names}
     entities_dict: EntitiesDict = EntitiesDict.from_dict(filtered_dict)
@@ -76,7 +80,6 @@ def check_name_entity_performance(ollama_model_name):
             if name_found:
                 break
 
-
         else:
             false_positive_count += 1
 
@@ -94,8 +97,6 @@ def check_name_entity_performance(ollama_model_name):
     print(f"{ConsoleTextColor.END.value}")
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # extract_and_save_all_name_entities("llama3.1")
     check_name_entity_performance("llama3.1")

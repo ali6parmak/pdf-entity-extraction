@@ -1,3 +1,8 @@
 setuptools==75.1.0
-git+https://github.com/huridocs/pdf-document-layout-analysis.git@3e905de378a2b5398fe6934713197b92add3d983
+git+https://github.com/huridocs/pdf-features.git@2025.10.13.1
 spacy==3.8.2
+transformers==4.57.1
+pdf-annotate==0.12.0
+rapidfuzz>=3.0.0
+black==25.9.0
+flair==0.14.0
